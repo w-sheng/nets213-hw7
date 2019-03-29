@@ -140,6 +140,7 @@ def weighted_majority_vote_workers(mturk_res):
     input_cols = []
     ans_cols = []
 
+
     for i in range(1,6):
     	cols.append(adj_string + str(i))
     	input_cols.append(adj_string + str(i))
@@ -162,11 +163,14 @@ def weighted_majority_vote_workers(mturk_res):
 	        
 	    	label = 'Yes'
 	    	worker_id = temp_df.iloc[0]['WorkerId'];
+
+	    	#keep track of number of hits each worker keep
 	    	if (worker_id in num_count_workers):
 	    		num_count_workers[worker_id] = num_count_workers[worker_id] +1;
 	    	else:
 	    		num_count_workers[worker_id] = 1;
-
+	    	
+	    	#keep track of the number of correct answer each worker has
 	    	if label == temp_df.iloc[i][ans_cols[j]]:
 	        	if worker_id in num_correct_workers:
 	        		num_correct_workers[worker_id] = num_correct_workers[worker_id] +1;
@@ -222,6 +226,7 @@ def weighted_majority_vote(mturk_res, workers):
 	    	adj = temp_df.iloc[0][input_cols[j]]
 	    	worker_ans = temp_df.iloc[i][ans_cols[j]];
 	    	tup = (attr, adj, worker_ans)
+
 	    	if tup in votes:
 	    		votes[tup] = votes[tup] + worker_qual
 	    	else:
@@ -254,9 +259,6 @@ def weighted_majority_vote(mturk_res, workers):
     return sorted(output_list, key=lambda tup: (tup[0],tup[1]))
 
 
-
-
-
 # Part 2 - EM algorithm
 
 def em_worker_quality(rows, labels):
@@ -277,9 +279,84 @@ def em_vote(rows, iter_num):
 # Part 3 - Qualified workers
 
 def select_qualified_worker(mturk_res):
-    pass
+    num_count_workers = {};
+    adj_string = 'Input.pos_qual_ctrl_'
+    ans_string = 'Answer.pos_qual_ctrl_'
+    cols = ['Input.attr_id', 'WorkerId', 'Answer.neg_qual_ctrl']
+    input_cols = []
+    ans_cols = []
 
 
+    for i in range(1,6):
+    	cols.append(adj_string + str(i))
+    	input_cols.append(adj_string + str(i))
+    for i in range(1,6):
+    	cols.append(ans_string + str(i))
+    	ans_cols.append(ans_string + str(i))
+
+    mturk_res = mturk_res[cols]
+    max_val = int(len(mturk_res .index) / 3)
+
+	# Loop through all attributes
+    for i in range(1,max_val+1):
+	    temp_df = mturk_res.iloc[i:, :]
+	    attr = temp_df.iloc[0]['Input.attr_id']
+
+	    worker_id = temp_df.iloc[0]['WorkerId'];
+
+	    if (worker_id in num_count_workers):
+	       	num_count_workers[worker_id] = num_count_workers[worker_id] +1;
+	    else:
+	       	num_count_workers[worker_id] = 1;
+
+    workers_5hits = [];
+	#getting workers with 5+ hits
+    for (key, value) in num_count_workers.items():
+    	if value >= 5:
+    		workers_5hits.append(key);
+
+
+ 
+    num_criteria_met_workers = {};
+ 
+	# Loop through all attributes
+    for i in range(1,max_val+1):
+	    temp_df = mturk_res.iloc[i:, :]
+	    attr = temp_df.iloc[0]['Input.attr_id']
+	    worker_id = temp_df.iloc[0]['WorkerId'];
+
+	    if (worker_id in workers_5hits):
+		    
+		    num_correct_pos = 0;
+		    for j in range(5):		  	
+		    	label = 'Yes'
+		    	if label == temp_df.iloc[i][ans_cols[j]]:
+		        	num_correct_pos+=1;
+
+		    if ('No' == temp_df.iloc[i]['Answer.neg_qual_ctrl']) or ('Naa' == temp_df.iloc[i]['Answer.neg_qual_ctrl']):
+		    	if num_correct_pos >= 4:
+		    		if worker_id in num_criteria_met_workers:
+		    			num_criteria_met_workers[worker_id] = num_criteria_met_workers[worker_id] + 1;
+		    		else:
+		    			num_criteria_met_workers[worker_id] = 1
+
+
+		    if worker_id not in num_criteria_met_workers:
+		    	num_criteria_met_workers[worker_id] = 0;
+
+
+
+    worker_percent_dict = {};
+    for worker in workers_5hits:
+    	percent = round(num_criteria_met_workers[worker]/num_count_workers[worker], 3);
+    	if percent >= .750:
+    		worker_percent_dict[worker] = percent
+    return worker_percent_dict;
+
+
+
+
+	        
 # Your main function
 
 def main():
@@ -316,9 +393,19 @@ def main():
 	with open('output4.csv', 'w') as output4:
 	    writer = csv.writer(output4)
 	    writer.writerow(('attr_id', 'adj', 'label'))
-	    writer.writerows(weighted_majority_vote_workers_res)
+	    writer.writerows(weighted_majority_vote_res)
 
 	output4.close()
+
+	select_qualified_worker_res = select_qualified_worker(mturk_res);
+	with open('output6.csv', 'w') as output6:
+	    writer = csv.writer(output6)
+	    writer.writerow(('worker_id', 'percentage'))
+	    writer.writerows(select_qualified_worker_res)
+
+	output6.close()
+
+
 	# Call functions and output required CSV files
 	pass
 
