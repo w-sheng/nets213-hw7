@@ -60,7 +60,72 @@ def majority_vote(mturk_res):
 	# return a list of three-element tuples in the format (attr_id, adj, label) sorted alphabetically given the same column order.
 
 def majority_vote_workers(mturk_res, votes):
-    pass
+    qualities = {};
+    num_count_workers = {};
+    num_correct_workers = {};
+    adj_string = 'Input.adj_'
+    ans_string = 'Answer.adj_'
+    cols = ['Input.attr_id', 'WorkerId']
+    input_cols = []
+    ans_cols = []
+
+    for i in range(1,11):
+    	cols.append(adj_string + str(i))
+    	input_cols.append(adj_string + str(i))
+    for i in range(1,11):
+    	cols.append(ans_string + str(i))
+    	ans_cols.append(ans_string + str(i))
+
+    mturk_res = mturk_res[cols]
+    max_val = int(len(mturk_res.index) / 3)
+
+	# Loop through all attributes
+    for i in range(1,max_val+1):
+	    temp_df = mturk_res.iloc[i:, :]
+	    attr = temp_df.iloc[0]['Input.attr_id']
+
+	    ans_df = mturk_res.iloc[(3*(i-1)):(3*i):, :]
+
+	    # Loop through all 10 adjectives
+	    for j in range(10):
+	        adj = temp_df.iloc[0][input_cols[j]]
+
+
+	        label = ''
+	        # Loop through all 3 HITs
+	        HIT_ans = []
+	        for k in range(3):
+	            HIT_ans.append(ans_df.iloc[k][ans_cols[j]])
+
+	        if (HIT_ans.count('Yes') > 1):
+	            label = 'Yes'
+	        else:
+	            label = 'No' 
+
+
+	        worker_id = temp_df.iloc[0]['WorkerId'];
+	        if (worker_id in num_count_workers):
+	        	num_count_workers[worker_id] = num_count_workers[worker_id] +1;
+	        else:
+	        	num_count_workers[worker_id] = 1;
+	        
+	        if label == temp_df.iloc[i][ans_cols[j]]:
+	        	if worker_id in num_correct_workers:
+	        		num_correct_workers[worker_id] = num_correct_workers[worker_id] +1;
+
+	        	
+	        	else:
+	        		num_correct_workers[worker_id] = 1;
+
+    for (key, val) in num_correct_workers.items():
+    	qualities[key] = round(val/num_count_workers[key], 3);
+
+    output_list = []
+
+    for key, value in qualities.items():
+    	output_list.append((key, value))
+
+    return sorted(output_list, key=lambda tup: (tup[0],tup[1]))
 
 
 # Part 1 - Weighted majority vote
@@ -109,6 +174,15 @@ def main():
 	    writer.writerows(majority_labels)
 
 	output1.close()
+
+	majority_vote_workers_res = majority_vote_workers(mturk_res, majority_labels);
+	with open('output2.csv', 'w') as output2:
+	    writer = csv.writer(output2)
+	    writer.writerow(('worker_id', 'quality'))
+	    writer.writerows(majority_vote_workers_res)
+
+	output2.close()
+
 	# Call functions and output required CSV files
 	pass
 
