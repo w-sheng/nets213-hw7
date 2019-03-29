@@ -262,10 +262,43 @@ def weighted_majority_vote(mturk_res, workers):
 # Part 2 - EM algorithm
 
 def em_worker_quality(rows, labels):
-    pass
+	k = len(rows)
+    n = len(rows[0])
+    worker_qual = []
+
+    for i in range(k):
+    	correct = 0
+    	for j in range(n):
+    		if rows[i][j] == labels[j]:
+    			correct += 1
+
+    	worker_qual.append(correct/n)
+    
+    return worker_qual
 
 def em_votes(rows, worker_qual):
-    pass
+    k = len(rows)
+    n = len(rows[0])
+    labels = []
+
+    for i in range(n):
+    	porn = 0
+    	notporn = 0
+
+    	for j in range(k):
+    		quality = worker_qual[j]
+
+    		if rows[j][i] == 'porn':
+    			porn += quality
+    		else:
+    			notporn += quality
+
+    	if porn > notporn:
+    		labels.append('porn')
+    	else:
+    		labels.append('notporn')
+
+    return labels
 
 def em_iteration(rows, worker_qual):
     labels = em_votes(rows, worker_qual)
@@ -273,7 +306,41 @@ def em_iteration(rows, worker_qual):
     return labels, worker_qual
 
 def em_vote(rows, iter_num):
-    pass
+	urlrow = rows[0]
+	labelrows = rows[1:]
+	for r in labelrows:
+		r.pop(0)
+
+	k = len(labelrows)
+    n = len(labelrows[0])
+    labels = []
+    worker_qual = [1] * k
+
+    # Majority vote
+    for i in range(n):
+    	label = ''
+    	worker_ans = []
+
+    	for j in range(k):
+	        worker_ans.append(labelrows[j][i])
+	    
+	    if (workers_ans.count('porn') > (len(worker_ans)/2)):
+	    	label = 'porn'
+	   	else:
+	   		label = 'notporn'
+
+        labels[i] = label
+
+    for i in range(iter_num):
+    	(labels, worker_qual) = em_iteration(labelrows, worker_qual)
+
+    output = []
+    for i in range(len(labels)):
+    	output.append((urlrow[i],labels[i]))
+
+    return sorted(output, key=lambda tup: (tup[0],tup[1]))
+	# return a list of two-element tuples in the format (url, label) sorted alphabetically by the url order
+    
 
 
 # Part 3 - Qualified workers
@@ -364,6 +431,7 @@ def main():
 	# PLEASE DO NOT CHANGE
 	mturk_res = pd.read_csv('hw7_data.csv')
 
+	## PART 1: Aggregation Methods
 	majority_labels = majority_vote(mturk_res)
 	with open('output1.csv', 'w') as output1:
 	    writer = csv.writer(output1)
@@ -389,7 +457,7 @@ def main():
 
 	output3.close()
 
-	weighted_majority_vote_res =weighted_majority_vote(mturk_res,weighted_majority_vote_workers_res);
+	weighted_majority_vote_res = weighted_majority_vote(mturk_res,weighted_majority_vote_workers_res);
 	with open('output4.csv', 'w') as output4:
 	    writer = csv.writer(output4)
 	    writer.writerow(('attr_id', 'adj', 'label'))
@@ -397,6 +465,36 @@ def main():
 
 	output4.close()
 
+	## PART 2: EM Algorithm
+	# import em toy data
+	lines = []
+	with open('em_toy_data.txt', 'r') as input:
+	    for line in input:
+	        lines.append(line)
+	# create rows 2d array
+	rows = [[0]*6]*6
+		for i in range(5):
+		    worker = 'worker' + str(i+1)
+    		worker_labels = [worker]
+		    for l in lines[(i*5):(i+1)*5]:
+		        label = l.split()[2]
+		        worker_labels.append(label)
+	    rows[i+1] = worker_labels
+	urls = []
+	for l in lines[:5]:
+		urls.append(l.split()[1])
+	rows[0] = lines
+	# call em on rows 2d array, 3 iterations
+	em = em_vote(rows, 3)
+	# write em to output
+	with open('output5.csv', 'w') as output5:
+	    writer = csv.writer(output5)
+	    writer.writerow(('url', 'label'))
+	    writer.writerows(em)
+
+	output5.close()
+
+	## PART 3: Qualified Workers
 	select_qualified_worker_res = select_qualified_worker(mturk_res);
 	with open('output6.csv', 'w') as output6:
 	    writer = csv.writer(output6)
