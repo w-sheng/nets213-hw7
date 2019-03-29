@@ -81,14 +81,14 @@ def majority_vote_workers(mturk_res, votes):
 
 	# Loop through all attributes
     for i in range(1,max_val+1):
-	    temp_df = mturk_res.iloc[i:, :]
-	    attr = temp_df.iloc[0]['Input.attr_id']
+	    temp_df = mturk_res.iloc[i]
+	    attr = temp_df['Input.attr_id']
 
 	    ans_df = mturk_res.iloc[(3*(i-1)):(3*i):, :]
 
 	    # Loop through all 10 adjectives
 	    for j in range(10):
-	        adj = temp_df.iloc[0][input_cols[j]]
+	        adj = temp_df[input_cols[j]]
 
 
 	        label = ''
@@ -103,13 +103,13 @@ def majority_vote_workers(mturk_res, votes):
 	            label = 'No' 
 
 
-	        worker_id = temp_df.iloc[0]['WorkerId'];
+	        worker_id = temp_df['WorkerId'];
 	        if (worker_id in num_count_workers):
 	        	num_count_workers[worker_id] = num_count_workers[worker_id] +1;
 	        else:
 	        	num_count_workers[worker_id] = 1;
 	        
-	        if label == temp_df.iloc[i][ans_cols[j]]:
+	        if label == temp_df[ans_cols[j]]:
 	        	if worker_id in num_correct_workers:
 	        		num_correct_workers[worker_id] = num_correct_workers[worker_id] +1;
 
@@ -153,16 +153,15 @@ def weighted_majority_vote_workers(mturk_res):
 
 	# Loop through all attributes
     for i in range(1,max_val+1):
-	    temp_df = mturk_res.iloc[i:, :]
-	    attr = temp_df.iloc[0]['Input.attr_id']
-
+	    temp_df = mturk_res.iloc[i]
+	    attr = temp_df['Input.attr_id']
 	    ans_df = mturk_res.iloc[(3*(i-1)):(3*i):, :]
 
 	    # Loop through all 5 gold standard pairs
 	    for j in range(5):
 	        
 	    	label = 'Yes'
-	    	worker_id = temp_df.iloc[0]['WorkerId'];
+	    	worker_id = temp_df['WorkerId'];
 
 	    	#keep track of number of hits each worker keep
 	    	if (worker_id in num_count_workers):
@@ -171,7 +170,7 @@ def weighted_majority_vote_workers(mturk_res):
 	    		num_count_workers[worker_id] = 1;
 	    	
 	    	#keep track of the number of correct answer each worker has
-	    	if label == temp_df.iloc[i][ans_cols[j]]:
+	    	if label == temp_df[ans_cols[j]]:
 	        	if worker_id in num_correct_workers:
 	        		num_correct_workers[worker_id] = num_correct_workers[worker_id] +1;
 	        	else:
@@ -215,16 +214,15 @@ def weighted_majority_vote(mturk_res, workers):
 
 	# Loop through all attributes
     for i in range(1,max_val+1):
-	    temp_df = mturk_res.iloc[i:, :]
-	    attr = temp_df.iloc[0]['Input.attr_id']
-	    worker_id = temp_df.iloc[0]['WorkerId'];
+	    temp_df = mturk_res.iloc[i];
+	    attr = temp_df['Input.attr_id'];
+	    worker_id = temp_df['WorkerId'];
 	    worker_qual= dict_workers_quality[worker_id];
 
 	    # Loop through all 10 adjectives
 	    for j in range(10):
-	    	
-	    	adj = temp_df.iloc[0][input_cols[j]]
-	    	worker_ans = temp_df.iloc[i][ans_cols[j]];
+	    	adj = temp_df[input_cols[j]]
+	    	worker_ans = temp_df[ans_cols[j]];
 	    	tup = (attr, adj, worker_ans)
 
 	    	if tup in votes:
@@ -299,10 +297,10 @@ def select_qualified_worker(mturk_res):
 
 	# Loop through all attributes
     for i in range(1,max_val+1):
-	    temp_df = mturk_res.iloc[i:, :]
-	    attr = temp_df.iloc[0]['Input.attr_id']
+	    temp_df = mturk_res.iloc[i]
+	    attr = temp_df['Input.attr_id']
 
-	    worker_id = temp_df.iloc[0]['WorkerId'];
+	    worker_id = temp_df['WorkerId'];
 
 	    if (worker_id in num_count_workers):
 	       	num_count_workers[worker_id] = num_count_workers[worker_id] +1;
@@ -321,19 +319,19 @@ def select_qualified_worker(mturk_res):
  
 	# Loop through all attributes
     for i in range(1,max_val+1):
-	    temp_df = mturk_res.iloc[i:, :]
-	    attr = temp_df.iloc[0]['Input.attr_id']
-	    worker_id = temp_df.iloc[0]['WorkerId'];
+	    temp_df = mturk_res.iloc[i]
+	    attr = temp_df['Input.attr_id']
+	    worker_id = temp_df['WorkerId'];
 
 	    if (worker_id in workers_5hits):
 		    
 		    num_correct_pos = 0;
 		    for j in range(5):		  	
 		    	label = 'Yes'
-		    	if label == temp_df.iloc[i][ans_cols[j]]:
+		    	if label == temp_df[ans_cols[j]]:
 		        	num_correct_pos+=1;
 
-		    if ('No' == temp_df.iloc[i]['Answer.neg_qual_ctrl']) or ('Naa' == temp_df.iloc[i]['Answer.neg_qual_ctrl']):
+		    if ('No' == temp_df['Answer.neg_qual_ctrl']) or ('Naa' == temp_df['Answer.neg_qual_ctrl']):
 		    	if num_correct_pos >= 4:
 		    		if worker_id in num_criteria_met_workers:
 		    			num_criteria_met_workers[worker_id] = num_criteria_met_workers[worker_id] + 1;
