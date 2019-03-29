@@ -304,13 +304,14 @@ def em_iteration(rows, worker_qual):
 	return labels, worker_qual
 
 def em_vote(rows, iter_num):
+	# get URLs and make labels matrix
 	urlrow = rows[0]
-	labelrows = rows[1:]
-	for r in labelrows:
+	label_matrix = rows[1:]
+	for r in label_matrix:
 		r.pop(0)
 
-	k = len(labelrows)
-	n = len(labelrows[0])
+	k = len(label_matrix)
+	n = len(label_matrix[0])
 	labels = []
 	worker_qual = [1] * k
 
@@ -319,23 +320,23 @@ def em_vote(rows, iter_num):
 		label = ''
 		worker_ans = []
 		for j in range(k):
-		    worker_ans.append(labelrows[j][i]) 
+		    worker_ans.append(label_matrix[j][i]) 
 		if (worker_ans.count('porn') > (len(worker_ans)/2)):
 			label = 'porn'
 		else:
 			label = 'notporn'
 		labels.append(label)
 
+	# Iterate EM
 	for i in range(iter_num):
-		(labels, worker_qual) = em_iteration(labelrows, worker_qual)
+		(labels, worker_qual) = em_iteration(label_matrix, worker_qual)
 
+	# Get tuple output
 	output = []
 	for i in range(len(labels)):
 		output.append((urlrow[i],labels[i]))
 
 	return sorted(output, key=lambda tup: (tup[0],tup[1]))
-	# return a list of two-element tuples in the format (url, label) sorted alphabetically by the url order
-
 
 
 # Part 3 - Qualified workers
@@ -427,51 +428,53 @@ def main():
 	mturk_res = pd.read_csv('hw7_data.csv')
 
 	## PART 1: Aggregation Methods
-	# majority_labels = majority_vote(mturk_res)
-	# with open('output1.csv', 'w') as output1:
-	#     writer = csv.writer(output1)
-	#     writer.writerow(('attr_id', 'adj', 'label'))
-	#     writer.writerows(majority_labels)
+	majority_labels = majority_vote(mturk_res)
+	with open('output1.csv', 'w') as output1:
+	    writer = csv.writer(output1)
+	    writer.writerow(('attr_id', 'adj', 'label'))
+	    writer.writerows(majority_labels)
 
-	# output1.close()
+	output1.close()
 
-	# majority_vote_workers_res = majority_vote_workers(mturk_res, majority_labels);
-	# with open('output2.csv', 'w') as output2:
-	#     writer = csv.writer(output2)
-	#     writer.writerow(('worker_id', 'quality'))
-	#     writer.writerows(majority_vote_workers_res)
+	majority_vote_workers_res = majority_vote_workers(mturk_res, majority_labels);
+	with open('output2.csv', 'w') as output2:
+	    writer = csv.writer(output2)
+	    writer.writerow(('worker_id', 'quality'))
+	    writer.writerows(majority_vote_workers_res)
 
-	# output2.close()
+	output2.close()
 
 
-	# weighted_majority_vote_workers_res = weighted_majority_vote_workers(mturk_res);
-	# with open('output3.csv', 'w') as output3:
-	#     writer = csv.writer(output3)
-	#     writer.writerow(('worker_id', 'quality'))
-	#     writer.writerows(weighted_majority_vote_workers_res)
+	weighted_majority_vote_workers_res = weighted_majority_vote_workers(mturk_res);
+	with open('output3.csv', 'w') as output3:
+	    writer = csv.writer(output3)
+	    writer.writerow(('worker_id', 'quality'))
+	    writer.writerows(weighted_majority_vote_workers_res)
 
-	# output3.close()
+	output3.close()
 
-	# weighted_majority_vote_res = weighted_majority_vote(mturk_res,weighted_majority_vote_workers_res);
-	# with open('output4.csv', 'w') as output4:
-	#     writer = csv.writer(output4)
-	#     writer.writerow(('attr_id', 'adj', 'label'))
-	#     writer.writerows(weighted_majority_vote_res)
+	weighted_majority_vote_res = weighted_majority_vote(mturk_res,weighted_majority_vote_workers_res);
+	with open('output4.csv', 'w') as output4:
+	    writer = csv.writer(output4)
+	    writer.writerow(('attr_id', 'adj', 'label'))
+	    writer.writerows(weighted_majority_vote_res)
 
-	# output4.close()
+	output4.close()
 
 	## PART 2: EM Algorithm
-	# import em toy data
+	# Import EM toy data
 	lines = []
 	with open('em_toy_data.txt', 'r') as input:
 	    for line in input:
 	        lines.append(line)
 	
-	# create rows 2d array
-	rows = [[0]*6]*6
+	# Create rows 2d array
+	# First row is list of URLs
+	# Row k = labels given by worker k
+	# Column n = label assigned to url n
+	rows = [[0]*5]*6
 	for i in range(5):
-	    worker = 'worker' + str(i+1)
-	    worker_labels = [worker]
+		worker_labels = []
 	    for l in lines[(i*5):(i+1)*5]:
 	        label = l.split()[2]
 	        worker_labels.append(label)
@@ -481,10 +484,10 @@ def main():
 		urls.append(l.split()[1])
 	rows[0] = urls
 	
-	# call em on rows 2d array, 3 iterations
+	# Call EM algorithm for 3 iterations
 	em = em_vote(rows, 3)
 	
-	# write em to output
+	# Write output
 	with open('output5.csv', 'w') as output5:
 	    writer = csv.writer(output5)
 	    writer.writerow(('url', 'label'))
@@ -493,13 +496,13 @@ def main():
 	output5.close()
 
 	## PART 3: Qualified Workers
-	# select_qualified_worker_res = select_qualified_worker(mturk_res);
-	# with open('output6.csv', 'w') as output6:
-	#     writer = csv.writer(output6)
-	#     writer.writerow(('worker_id', 'percentage'))
-	#     writer.writerows(select_qualified_worker_res)
+	select_qualified_worker_res = select_qualified_worker(mturk_res);
+	with open('output6.csv', 'w') as output6:
+	    writer = csv.writer(output6)
+	    writer.writerow(('worker_id', 'percentage'))
+	    writer.writerows(select_qualified_worker_res)
 
-	# output6.close()
+	output6.close()
 
 
 	# Call functions and output required CSV files
